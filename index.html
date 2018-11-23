@@ -156,14 +156,14 @@ admin.site.register(Snippet)</code> </pre>
         Bienvenu sur votre page d’administration:
     </p>
 
-    <img src="statics/img/first-admin-page.png" class="img-thumbnail m-2  shadow text-center" alt="first admin page">
+    <img src="./statics/img/first-admin-page.png" class="img-thumbnail m-2  shadow text-center" alt="first admin page">
 
     <p>Cliquez sur le bouton ‘+ Ajouter’ à côté de Snippets et créez deux nouveaux snippets:</p>
 
-    <img src="statics/img/first-snippet.png" class="img-thumbnail m-2 shadow text-center"
+    <img src="./statics/img/first-snippet.png" class="img-thumbnail m-2 shadow text-center"
          alt="adding first snippet in admin">
 
-    <img src="statics/img/second-snippet.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/second-snippet.png" class="img-thumbnail m-2  shadow text-center"
          alt="adding second snippet in admin">
 
     <p>Cliquez sur le bouton enregistrer en bas à droite pour valider la création de chacun des snippets. Vous pouvez à
@@ -171,7 +171,7 @@ admin.site.register(Snippet)</code> </pre>
                 href="http://127.0.0.1:8000/admin/snippets/snippet/">http://127.0.0.1:8000/admin/snippets/snippet/</a>.
     </p>
 
-    <img src="statics/img/snippets-list.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/snippets-list.png" class="img-thumbnail m-2  shadow text-center"
          alt="list of all snippets">
 
     <h2>La Sérialisation</h2>
@@ -276,14 +276,14 @@ urlpatterns = format_suffix_patterns(urlpatterns)</code></pre>
         <a href="http://127.0.0.1:8000/snippets/">http://127.0.0.1:8000/snippets/</a>:
     </p>
 
-    <img src="statics/img/api_list.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/api_list.png" class="img-thumbnail m-2  shadow text-center"
          alt="list of all snippets in the browsable API">
 
     <p>Vous pouvez aussi afficher le détail d’un snippet en allant à l’adresse <a href="">http://127.0.0.1:8000/snippets/{id
         du snippet}/</a>.
     </p>
 
-    <img src="statics/img/api_detail.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/api_detail.png" class="img-thumbnail m-2  shadow text-center"
          alt="details snippet in the browsable API">
 
     <p>Pour rappel, l’<code>id</code> d’un snippet est automatiquement ajouté par Django lors de sa création.
@@ -390,7 +390,7 @@ class Snippet(models.Model):
     <p>Cliquez sur le lien <a href="http://127.0.0.1:8000/admin/auth/user/">Utilisateurs</a>, vous devriez voir les deux
         comptes utilisateurs que vous venez de créer:</p>
 
-    <img src="statics/img/new_users.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/new_users.png" class="img-thumbnail m-2  shadow text-center"
          alt="list of newly created users">
 
     <p>Nous avons aussi besoin de recréer les snippets. Sur la page <a
@@ -399,7 +399,7 @@ class Snippet(models.Model):
 
     <p>Cependant vous remarquerez qu’au moment de cliquer sur sauvegarder une erreur apparaît:</p>
 
-    <img src="statics/img/snippet-creation-error.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/snippet-creation-error.png" class="img-thumbnail m-2  shadow text-center"
          alt="error when creating a new snippet">
 
     <p>Nous avons ici une erreur de validation du nom de <code>ValidationError</code>. Dans le tutoriel officiel de DRF
@@ -427,7 +427,7 @@ admin.site.register(Snippet, SnippetAdmin)</code></pre>
     <p>La dernière étape est de vous déconnecter de l’administration en cliquant sur Déconnexion en haut à droite de la
         page:</p>
 
-    <img src="statics/img/logout.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/logout.png" class="img-thumbnail m-2  shadow text-center"
          alt="log out button">
 
     <p>Nous ajouterons bientôt des permissions à notre API afin que seuls les utilisateurs authentifiés (connectés) y
@@ -614,7 +614,7 @@ class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
 
     <p>A présent rendez vous sur <a href="http://127.0.0.1:8000/snippets/">http://127.0.0.1:8000/snippets/</a></p>
 
-    <img src="statics/img/api_list_loggedout.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/api_list_loggedout.png" class="img-thumbnail m-2  shadow text-center"
          alt="list of snippets logged out">
 
     <p>Puisque qu’aucun utilisateur n’est connecté, vous pouvez remarquer qu’il n’est plus possible de créer de nouveau
@@ -639,14 +639,14 @@ urlpatterns = [
     <p>Ouvrez maintenant votre navigateur et rafraîchissez la page. Vous verrez un lien <code>Log in</code> en haut à
         droite de la page.</p>
 
-    <img src="statics/img/login_link.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/login_link.png" class="img-thumbnail m-2  shadow text-center"
          alt="login link">
 
     <p>Connectez vous avec votre utilisateur <code>testuser</code> et rendez vous sur le endpoint <a
             href="http://127.0.0.1:8000/users/">http://127.0.0.1:8000/users/</a> vous pouvez constater que chaque
         utilisateur a à présent une liste des id de snippets qu’il a créé.</p>
 
-    <img src="statics/img/users_list.png" class="img-thumbnail m-2  shadow text-center"
+    <img src="./statics/img/users_list.png" class="img-thumbnail m-2  shadow text-center"
          alt="list of users with their associated snippets">
 
     <p>Il n’y a ici qu’un seul snippet dont l’id est 1, créé par testuser. Tous les snippets qu’il créera dans le futur
