@@ -1,1 +1,1 @@
-# tuto-rest.github.io
+# tuto-django-rest

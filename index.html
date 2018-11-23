@@ -149,11 +149,509 @@ admin.site.register(Snippet)</code> </pre>
     <p>Ouvrez votre navigateur et allez à l’adresse <a href="http://1207.0.0.1:8000/">http://1207.0.0.1:8000/</a>. Si
         tout fonctionne correctement vous devriez voir la page suivante :</p>
 
+    <img src="statics/img/success.png" class="img-thumbnail m-2 shadow text-center" alt="Django default index page">
+
+    <p>Rendez vous maintenant sur la page d’administration de votre site <a href="http://1207.0.0.1:8000/admin/">http://1207.0.0.1:8000/admin/</a>.
+        Connectez vous avec les identifiants précédemment créés.
+        Bienvenu sur votre page d’administration:
+    </p>
+
+    <img src="statics/img/first-admin-page.png" class="img-thumbnail m-2  shadow text-center" alt="first admin page">
+
+    <p>Cliquez sur le bouton ‘+ Ajouter’ à côté de Snippets et créez deux nouveaux snippets:</p>
+
+    <img src="statics/img/first-snippet.png" class="img-thumbnail m-2 shadow text-center"
+         alt="adding first snippet in admin">
+
+    <img src="statics/img/second-snippet.png" class="img-thumbnail m-2  shadow text-center"
+         alt="adding second snippet in admin">
+
+    <p>Cliquez sur le bouton enregistrer en bas à droite pour valider la création de chacun des snippets. Vous pouvez à
+        présent voir vos nouveau snippets sur la page Snippets à l’adresse <a
+                href="http://127.0.0.1:8000/admin/snippets/snippet/">http://127.0.0.1:8000/admin/snippets/snippet/</a>.
+    </p>
+
+    <img src="statics/img/snippets-list.png" class="img-thumbnail m-2  shadow text-center"
+         alt="list of all snippets">
+
+    <h2>La Sérialisation</h2>
+
+    <p>Un sérialiseur (en:serializer) transforme les instances de modèles en JSON. C’est là que toute la magie de Django
+        REST Framework opère car une API c’est avant du JSON et des requêtes HTTP.</p>
+
+    <p>Créez un fichier <code>snippets/serializers.py:</code></p>
+
+    <pre><code class="language-bash">(env) $ touch snippets/serializers.py</code> </pre>
+
+    <p>Créez une classe SnippetSerializer qui hérite de la classe ModelSerializer de DRF, cette classe utilisera notre
+        modèle Snippet et en extraira les champs.</p>
+
+    <pre><code class="language-python">from rest_framework import serializers
+from .models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
+
+
+class SnippetSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Snippet
+        fields = ('id', 'title', 'code', 'linenos',
+                  'language', 'style', )</code> </pre>
+    <p>Ensuite nous avons besoin d’une classe capable de combiner ensemble les modèles, sérialiseurs et URLs. DRF, tout
+        comme Django, nous fournit un certain nombre de vues génériques pour simplifier les tâche les plus communes.
+    </p>
+
+    <p>
+        Ici nous utiliserons <a href="http://www.django-rest-framework.org/api-guide/generic-views/#listcreateapiview">ListCreateAPIView</a>
+        afin d’accéder en lecture seule à toutes les instances de Snippets disponibles ainsi que <a
+            href="http://www.django-rest-framework.org/api-guide/generic-views/#retrieveupdatedestroyapiview">RetriveUpdateDestroyAPIView</a>
+        pour accéder à une vue détaillée de chaque instance de snippet supportant les fonctionnalités CRUD (Création,
+        Lecture, Mise à jour et Suppression). Pour ce faire ajoutez les lignes suivantes dans le fichier
+        <code>snippets/views.py</code>:
+    </p>
+
+    <pre><code class="language-python">from rest_framework import generics
+from .models import Snippet
+from .serializers import SnippetSerializer
+
+class SnippetList(generics.ListCreateAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+
+
+class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer</code></pre>
+
+    <h2>Les URLs</h2>
+
+    <p>La dernière étape consiste à configurer nos URLs. Ajoutez les lignes suivantes dans le fichier <code>tutorial/urls.py</code>
+        du dossier principal de votre projet:</p>
+
+    <pre><code class="language-python">from django.contrib import admin
+from django.urls import include, path # new
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('snippets.urls')), # new
+]</code></pre>
+
+    <p>Pour rappel ceci permettra de gérer les URLs de l’application Snippets dans son propre fichier de configuration
+        snippets/urls.py, créez alors ce fichier avec la commande suivante :
+    </p>
+
+    <pre><code class="language-bash">(env) $ touch snippets/urls.py</code></pre>
+
+    <p>Et ajoutez y le code suivant:</p>
+
+    <pre><code class="language-python">from django.urls import path
+from rest_framework.urlpatterns import format_suffix_patterns
+from snippets import views
 
 
 
+urlpatterns = [
+    path('snippets/', views.SnippetList.as_view()),
+    path('snippets/&lt;int:pk&gt;/', views.SnippetDetail.as_view()),
+]
+
+urlpatterns = format_suffix_patterns(urlpatterns)</code></pre>
+
+    <p>
+        Inclure <a href="http://www.django-rest-framework.org/api-guide/format-suffixes/#format_suffix_patterns">format_suffix_patterns</a>
+        est optionnel, mais cela permet d’accéder aux URLs en leur spécifiant un format
+        de sortie. Votre API pourra alors supporter aussi bien des URLs telles que <a
+            href="http://example.com/api/items/4.json">http://example.com/api/items/4.json</a>
+        plutôt que simplement <a href="http://example.com/api/items/4">http://example.com/api/items/4</a>.
+    </p>
+
+    <h2>Naviguer sur l’API</h2>
+
+    <p>DRF est fourni avec la possibilité de consulter votre API directement dans votre navigateur. Vous pouvez le faire
+        dès à présent. Assurez vous que votre serveur local est bien entrain de tourner :
+    </p>
+
+    <pre><code class="language-bash">(env) $ python manage.py runserver</code></pre>
+
+    <p>Rendez vous ensuite sur l’URL listant tous les snippets enregistrés dans votre application à l’adresse suivante:
+        <a href="http://127.0.0.1:8000/snippets/">http://127.0.0.1:8000/snippets/</a>:
+    </p>
+
+    <img src="statics/img/api_list.png" class="img-thumbnail m-2  shadow text-center"
+         alt="list of all snippets in the browsable API">
+
+    <p>Vous pouvez aussi afficher le détail d’un snippet en allant à l’adresse <a href="">http://127.0.0.1:8000/snippets/{id
+        du snippet}/</a>.
+    </p>
+
+    <img src="statics/img/api_detail.png" class="img-thumbnail m-2  shadow text-center"
+         alt="details snippet in the browsable API">
+
+    <p>Pour rappel, l’<code>id</code> d’un snippet est automatiquement ajouté par Django lors de sa création.
+    </p>
+
+    <h2>Requêtes et Réponses</h2>
+
+    <p>En l’état notre API ne gère pas les droits d’utilisateurs, tout le monde peut ajouter, modifier et supprimer des
+        snippets librement. Dans cette section nous nous assurerons que:
+    </p>
+
+    <ul>
+        <li>Chaque snippets aie un créateur qui lui soit associé.</li>
+        <li>Seuls des utilisateurs authentifiés peuvent créer des snippets.</li>
+        <li>Seul le créateur d’un snippets peut le modifier ou le supprimer.</li>
+        <li>Les utilisateurs/requêtes non identifiés n’ont qu’un droit de lecture-seule sur tous les snippets.</li>
+    </ul>
+
+    <h2>Ajouter des informations à notre modèle</h2>
+
+    <p>Tout d’abord, ajoutez deux nouveaux champs à votre modèle <code>Snippets</code> existant:
+    </p>
+
+    <ul>
+        <li><code>owner</code> qui représente l’utilisateur qui a créé le snippet.</li>
+        <li><code>highlighted</code> qui stocke au format HTML la coloration syntaxique du code généré par pygments.
+        </li>
+    </ul>
+
+    <p>Nous voulons aussi nous assurer que lorsque le modèle est sauvegardé, nous utilisons bien la librairie de
+        coloration syntaxique <code>pygments</code> dans le remplissage du champ <code>highlighted</code>. Nous aurons
+        donc besoin d’imports
+        additionnels ainsi que d’une méthode <code>.save()</code> personnalisée. Revenez à votre fichier <code>snippets/models.py</code>
+        et ajoutez ce qui suit:
+    </p>
+
+    <pre><code class="language-python">from django.db import models
+from pygments import highlight # new
+from pygments.formatters.html import HtmlFormatter # new
+from pygments.lexers import get_all_lexers, get_lexer_by_name # new
+from pygments.styles import get_all_styles
+
+LEXERS = [item for item in get_all_lexers() if item[1]]
+LANGUAGE_CHOICES = sorted([(item[1][0], item[0]) for item in LEXERS])
+STYLE_CHOICES = sorted((item, item) for item in get_all_styles())
 
 
+class Snippet(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=100, blank=True, default='')
+    code = models.TextField()
+    linenos = models.BooleanField(default=False)
+    language = models.CharField(choices=LANGUAGE_CHOICES, default='python', max_length=100)
+    style = models.CharField(choices=STYLE_CHOICES, default='friendly', max_length=100)
+    owner = models.ForeignKey('auth.User', related_name='snippets', on_delete=models.CASCADE) # new
+    highlighted = models.TextField() # new
+
+    class Meta:
+        ordering = ('created',)
+
+    def save(self, *args, **kwargs): # new
+        """
+        Use the `pygments` library to create a highlighted HTML
+        representation of the code snippet.
+        """
+        lexer = get_lexer_by_name(self.language)
+        linenos = 'table' if self.linenos else False
+        options = {'title': self.title} if self.title else {}
+        formatter = HtmlFormatter(style=self.style, linenos=linenos,
+                                  full=True, **options)
+        self.highlighted = highlight(self.code, lexer, formatter)
+        super(Snippet, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title</code></pre>
+
+    <p>En temps normal nous aurions créée nos migrations et les aurions synchronisées (<code>makemigration</code> et
+        <code>migrate</code>) pour
+        mettre à jour la base de données. Mais vu que nous avons ajouté un <code>owner</code> (utilisateur) à notre
+        modèle déjà
+        existant et que nous n’avons que peu de données déjà en base il est plus simple de supprimer toute la base et de
+        repartir de zéro.
+        Arrêtez votre serveur local avec le raccourcis <code>Ctrl+c</code> et entrez les commandes suivantes:
+    </p>
+
+    <pre><code class="language-bash">(env) $ rm -f db.sqlite3
+(env) $ rm -r snippets/migrations
+(env) $ python manage.py makemigrations snippets
+(env) $ python manage.py migrate</code></pre>
+
+    <p>Ensuite créez à nouveau un super-utilisateur comme fait précédemment et ajoutez en un second de la même manière.
+        Vous lancerez alors la commande createsuperuser deux fois. Pour l’exemple appelez vos utilisateurs admin et
+        testuser puis relancez le serveur local :
+    </p>
+
+    <pre><code class="language-bash">(env) $ python manage.py createsuperuser
+(env) $ python manage.py createsuperuser
+(env) $ python manage.py runserver</code></pre>
+
+    <p>Retournez sur la page d’administration de votre application à l’adresse <a href="http://127.0.0.1:8000/admin/">http://127.0.0.1:8000/admin/</a>
+        et connectez-vous avec le compte <code>admin</code>.
+    </p>
+
+    <p>Cliquez sur le lien <a href="http://127.0.0.1:8000/admin/auth/user/">Utilisateurs</a>, vous devriez voir les deux
+        comptes utilisateurs que vous venez de créer:</p>
+
+    <img src="statics/img/new_users.png" class="img-thumbnail m-2  shadow text-center"
+         alt="list of newly created users">
+
+    <p>Nous avons aussi besoin de recréer les snippets. Sur la page <a
+            href="http://127.0.0.1:8000/admin/snippets/snippet/">Snippets</a> de l’administration, créez deux nouveaux
+        snippets en leur attribuant un <code>utilisateur</code>.</p>
+
+    <p>Cependant vous remarquerez qu’au moment de cliquer sur sauvegarder une erreur apparaît:</p>
+
+    <img src="statics/img/snippet-creation-error.png" class="img-thumbnail m-2  shadow text-center"
+         alt="error when creating a new snippet">
+
+    <p>Nous avons ici une erreur de validation du nom de <code>ValidationError</code>. Dans le tutoriel officiel de DRF
+        les données
+        sont ajoutées en base via le shell de Django, mais ici c’est l’interface d’administration que nous utilisons. Ce
+        qui empêche la fonction <code>save()</code> que nous avons personnalisé de remplir automatiquement le champ
+        <code>highlighted</code>. Pour
+        résoudre ce problème, rendez vous dans le fichier <code>snippets/admin.py</code> et définissez
+        <code>highlighted</code> en tant que champ
+        en lecture seule :
+    </p>
+
+    <pre><code class="language-python">from django.contrib import admin
+from . models import Snippet
+
+
+class SnippetAdmin(admin.ModelAdmin):
+    readonly_fields = ('highlighted',)
+
+
+admin.site.register(Snippet, SnippetAdmin)</code></pre>
+
+    <p>Cliquez à nouveau sur le bouton Enregistrer et cette fois tout devrait bien se passer.</p>
+
+    <p>La dernière étape est de vous déconnecter de l’administration en cliquant sur Déconnexion en haut à droite de la
+        page:</p>
+
+    <img src="statics/img/logout.png" class="img-thumbnail m-2  shadow text-center"
+         alt="log out button">
+
+    <p>Nous ajouterons bientôt des permissions à notre API afin que seuls les utilisateurs authentifiés (connectés) y
+        aient accès.</p>
+
+    <h2>Ajoutons des <span class="font-italic">endpoints</span> à nos modèles Utilisateurs</h2>
+
+    <p>Note sur les endpoints:<br>
+        Les endpoints sont les points d’accès à l’API, tels que les URLs de requêtes. Ajouter des endpoints à nos
+        modèles Utilisateurs c’est gérer les accès en entrée et en sortie à notre API en fonction des droits que nous
+        leur accordons.</p>
+
+    <p>Maintenant que nous avons des utilisateurs sur lesquels travailler, ajoutons leurs des endpoints sur notre
+        API.</p>
+
+    <p>Ajoutez une nouvelle classe <code>UserSerializer</code> au fichier <code>snippets/serializers.py</code>:</p>
+
+    <pre><code class="language-python">from django.contrib.auth.models import User
+from rest_framework import serializers
+from snippets.models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
+
+
+class SnippetSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Snippet
+        fields = ('id', 'title', 'code', 'linenos',
+                  'language', 'style', )
+
+
+class UserSerializer(serializers.ModelSerializer):
+    snippets = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Snippet.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'snippets')</code></pre>
+
+    <p>Parce que <code>snippets</code> a une relation ‘inverse’ avec le modèle par défaut <code>User</code> de Django,
+        il ne sera pas inclus automatiquement en utilisant la classe <code>ModelSerializer</code>, pour ce faire, nous
+        devons ajouter ce champ nous même.</p>
+
+    <p>Nous avons aussi besoin d’ajouter deux nouvelles vues en lecture seule, une pour afficher la liste des
+        utilisateurs et la seconde pour afficher les informations détaillées d’un utilisateur. Notez que nous utilisons
+        ici la vue générique <code>RetriveAPIView</code> pour la vue détaillée en lecture seule et que nous importons au
+        début du
+        fichier les classes <code>User</code> et <code>UserSerializer</code>. Ouvrez le fichier
+        <code>snippets/views.py</code> et ajoutez ce qui suit:
+    </p>
+
+    <pre><code class="language-python">from django.contrib.auth.models import User # new
+from rest_framework import generics
+
+from .models import Snippet
+from .serializers import SnippetSerializer, UserSerializer # new
+
+
+class SnippetList(generics.ListCreateAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+
+
+class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+
+
+class UserList(generics.ListAPIView): # new
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserDetail(generics.RetrieveAPIView): # new
+    queryset = User.objects.all()
+    serializer_class = UserSerializer</code></pre>
+
+    <p>Pour finir d’ajouter nos nouvelles vues, il faut configurer leurs URLs.
+        Ajoutez les lignes suivantes au fichier <code>snippets/urls.py</code>:
+    </p>
+
+    <pre><code class="language-python">from django.urls import path
+from rest_framework.urlpatterns import format_suffix_patterns
+from snippets import views
+
+urlpatterns = [
+    path('snippets/', views.SnippetList.as_view()),
+    path('snippets/&lt;int:pk&gt;/', views.SnippetDetail.as_view()),
+    path('users/', views.UserList.as_view()), # new
+    path('users/&lt;int:pk&gt;/', views.UserDetail.as_view()), # new
+]
+
+urlpatterns = format_suffix_patterns(urlpatterns)</code></pre>
+
+    <h2>Associer des snippets à des utilisateurs</h2>
+
+    <p>Pour l’instant il n’est pas possible d’associer automatiquement l’utilisateur connecté qui crée le snippet cette
+        instance de snippet. Nous pouvons automatiser cette tâche en surchargeant la méthode
+        <code>.perform_create()</code> dans nos
+        vues snippet, ce qui permet de modifier la manière dont sont sauvegardées les instances.
+    </p>
+
+    <p>Ajoutez la méthode suivante à notre classe SnippetList dans le fichier <code>snippets/views.py</code>:</p>
+
+    <pre><code class="language-python">class SnippetList(generics.ListCreateAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+
+    def perform_create(self, serializer): # new
+        serializer.save(owner=self.request.user)</code></pre>
+
+    <h2>Mettre à jour notre sérialiseur</h2>
+
+    <p>Maintenant que nos snippets sont associés à l’utilisateur qui les a créés, mettons à jour
+        <code>SnippetSerializer</code> en y
+        ajoutant un <code>owner</code>. Assurez vous d’inclure aussi <code>owner</code> dans la liste des champs fields.
+        Ouvrez
+        <code>snippets/serializers.py</code>:
+    </p>
+
+    <pre><code class="language-python">from django.contrib.auth.models import User
+from rest_framework import serializers
+from snippets.models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
+
+
+class SnippetSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username') # new
+
+    class Meta:
+        model = Snippet
+        fields = ('id', 'title', 'code', 'linenos',
+                  'language', 'style', 'owner',) # new
+
+
+class UserSerializer(serializers.ModelSerializer):
+    snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'snippets')</code></pre>
+
+    <p>Ici, l’argument <code>source</code> sert à contrôler quel attribut est utilisé pour remplir le champ
+        <code>owner</code> et peut pointer
+        vers n’importe quel attribut de l’instance sérialisée. Notez aussi que nous utilisons un champ <code>ReadOnlyField</code>,
+        qui le limite à la lecture seule, empêchant toute modification de celui-ci lorsqu’il est sérialisé. Nous aurions
+        aussi bien pu utiliser un champ <code class="language-python">CharField(read_only=True)</code> pour obtenir le
+        même résultat.</p>
+
+    <h2>Ajouter les permissions aux vues</h2>
+
+    <p>A présent nous voulons nous assurer que seuls les utilisateurs authentifiés peuvent créer, mettre à jour et
+        supprimer des snippets.</p>
+
+    <p>DRF est livré avec un certain nombre de classes de gestions de permissions que nous pouvons utiliser pour
+        restreindre l’accès à une vue donnée. Nous utiliserons ici <code>IsAuthenticatedOrReadOnly</code> pour s’assurer
+        que seules
+        les requêtes authentifiées auront des autorisations en lecture et écriture et que toutes les autres seront en
+        lecture seule. Une fois n’est pas coutume, ouvrez le fichier snippets/views.py et ajoutez les lignes
+        suivantes:</p>
+
+    <pre><code class="language-python">from django.contrib.auth.models import User
+from rest_framework import generics, permissions # new
+
+from .models import Snippet
+from .serializers import SnippetSerializer, UserSerializer
+
+
+class SnippetList(generics.ListCreateAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,) # new
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,) # new
+
+...</code></pre>
+
+    <h2>Ajouter l’authentification sur la version navigable de l’API</h2>
+
+    <p>A présent rendez vous sur <a href="http://127.0.0.1:8000/snippets/">http://127.0.0.1:8000/snippets/</a></p>
+
+    <img src="statics/img/api_list_loggedout.png" class="img-thumbnail m-2  shadow text-center"
+         alt="list of snippets logged out">
+
+    <p>Puisque qu’aucun utilisateur n’est connecté, vous pouvez remarquer qu’il n’est plus possible de créer de nouveau
+        snippet. Pour ce faire, vous devez être connecté en tant qu'utilisateur.</p>
+
+    <p>Nous pouvons ajouter une page de connection en éditant le configurateur d’URL du dossier de votre projet <code>tutorial/urls.py</code>.
+        Ajoutez <code>rest_framework.urls</code> à la route <code>api-auth/</code>:</p>
+
+    <pre><code class="language-python">from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api-auth/', include('rest_framework.urls')), # new
+    path('', include('snippets.urls')),
+]</code></pre>
+
+    <p>Notez que la route <code>api-auth/</code> écrite ici n’a pas d’importance, vous auriez aussi bien pu écrire
+        <code>un-nom/</code>, le résultat aurait été le même, l’important étant que <code>rest_framework.urls</code>
+        soit inclus.</p>
+
+    <p>Ouvrez maintenant votre navigateur et rafraîchissez la page. Vous verrez un lien <code>Log in</code> en haut à
+        droite de la page.</p>
+
+    <img src="statics/img/login_link.png" class="img-thumbnail m-2  shadow text-center"
+         alt="login link">
+
+    <p>Connectez vous avec votre utilisateur <code>testuser</code> et rendez vous sur le endpoint <a
+            href="http://127.0.0.1:8000/users/">http://127.0.0.1:8000/users/</a> vous pouvez constater que chaque
+        utilisateur a à présent une liste des id de snippets qu’il a créé.</p>
+
+    <img src="statics/img/users_list.png" class="img-thumbnail m-2  shadow text-center"
+         alt="list of users with their associated snippets">
+
+    <p>Il n’y a ici qu’un seul snippet dont l’id est 1, créé par testuser. Tous les snippets qu’il créera dans le futur
+        apparaitront ici. Cela fonctionnera de la même manière pour tous les prochains utilisateurs et snippets
+        créés.</p>
 </div>
 
 </body>
