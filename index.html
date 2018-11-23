@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link href="statics/css/prism.css" rel="stylesheet" type="text/css"/>
+    <script src="statics/js/prism.js" type="text/javascript"></script>
+
+    <title>Tuto Django REST</title>
+</head>
+<body>
+<div class="container w-75">
+
+    <h1 class="text-center">Tutoriel DJango REST Framework (DRF)<br>
+        Le guide du débutant
+    </h1>
+    <br>
+    <p>Texte Original <a href="https://wsvincent.com/official-django-rest-framework-tutorial-beginners-guide/">Official
+        Django REST Framework Tutorial - A Beginners Guide.</a>
+    </p>
+
+    <p>Ceci est un tutoriel destiné aux débutants tiré du tutoriel officiel que vous pouvez trouver sur le site du <a
+            href="http://www.django-rest-framework.org/tutorial/1-serialization/">Framework Django REST</a>. Nous
+        créerons la même API de coloration syntaxique que dans le tutoriel original en y ajoutant des explications plus
+        détaillées et des extraits de code plus complets. Nous ferons l'impasse sur les passages relatifs au shell de
+        Django, sur les vues-fonctions (en: function-based views) ainsi que sur d’autres concepts, certes utiles mais
+        qui peuvent porter les débutants à confusion.</p>
+
+    <p>Si vous avez eu du mal à terminer le tutoriel officiel, ce tutoriel vous aidera repartir sur de bonnes bases.
+    </p>
+
+    <p>Tous les codes sources sont disponibles sur <a
+            href="https://github.com/wsvincent/rest-framework-tutorial">Github</a>.
+    </p>
+
+    <p>NOTE: Ce tutoriel est basé sur le livre <a href="https://wsvincent.com/books/">‘REST APIs with Django’</a> qui
+        traite de comment créer et tester plusieurs API web avec Django et Django REST Framework.</p>
+
+    <h2>Configuration initiale</h2>
+
+    <p>Rendez vous sur le lien de <a href="https://djangoforbeginners.com/initial-setup/">Django for Beginners</a> Pour
+        un guide étape par étape sur l’installation de Python 3.6 et de Pipenv sur Mac, Windows et Linux.</p>
+
+    <p>Une fois que vous êtes prêts, créez un nouvel environnement virtuel pour votre projet et installez-y django,
+        <code>djangorestframework</code> et <code>pygment</code> qui sera utile pour la coloration syntaxique. Assurez
+        vous ensuite d’activer
+        l’environnement virtuel dans un nouveau terminal.</p>
+
+    <pre><code class="language-bash">$ pipenv install django djangorestframework pygments
+$ pipenv shell
+(env) $</code></pre>
+
+    <p>NOTE: Par convention nous appelons ici l’environnement virtuel <code>(env)</code>. En pratique, le nom de vos
+        environnements
+        virtuels sera une variation du nom du dossier courant de votre projet. Pour quitter un environnement virtuel
+        tapez simplement <code>exit</code>.
+    </p>
+
+    <p>Créez maintenant le nouveau projet sur lequel nous allons travailler, nommez le <code>tutorial</code> et ajoutez
+        lui une
+        app(lication) <code>snippet</code> qui contiendra notre API.</p>
+
+    <pre><code class="language-bash">(env) $ django-admin.py startproject tutorial .
+(env) $ python manage.py startapp snippets</code></pre>
+
+    <p>Ajoutez ensuite les app <code>snippets</code> et <code>rest_framework</code>< à la variable de configuration
+        <code>INSTALLED_APPS</code> présente dans le
+        fichier <code>tutorial/settings.py</code>:</p>
+
+    <pre><code class="language-python">INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework', # new
+    'snippets', # new
+]</code></pre>
+
+    <p>Note de traduction: Profitez en pour modifier les variables suivantes afin de régler votre fuseau horaire et la
+        langue par défaut de votre site et de votre page d’administration:</p>
+
+    <pre><code class="language-python">LANGUAGE_CODE = 'fr-FR'
+TIME_ZONE = 'Europe/Paris'</code> </pre>
+
+    <h2>Les Modèles</h2>
+
+    <p>Créer un modèle est un bon point de départ dans la création d’une nouvelle app. Dans le fichier
+        <code>snippets/models.py</code> créez comme suit un nouveau modèle que vous nommerez <code>Snippet</code>.</p>
+
+    <pre><code class="language-python">from django.db import models
+from pygments.lexers import get_all_lexers
+from pygments.styles import get_all_styles
+
+LEXERS = [item for item in get_all_lexers() if item[1]]
+LANGUAGE_CHOICES = sorted([(item[1][0], item[0]) for item in LEXERS])
+STYLE_CHOICES = sorted((item, item) for item in get_all_styles())
+
+
+class Snippet(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=100, blank=True, default='')
+    code = models.TextField()
+    linenos = models.BooleanField(default=False)
+    language = models.CharField(choices=LANGUAGE_CHOICES, default='python', max_length=100)
+    style = models.CharField(choices=STYLE_CHOICES, default='friendly', max_length=100)
+
+class Meta:
+    ordering = ('created',)
+
+def __str__(self):
+    return self.title</code></pre>
+
+    <p>Initialisez ensuite vos fichiers de migration et synchronisez la base de données pour la première fois à l’aide
+        des commandes suivantes:</p>
+
+    <pre><code class="language-bash">(env) $ python manage.py makemigrations snippets
+(env) $ python manage.py migrate</code></pre>
+
+    <p>Ajoutons maintenant quelques données à notre base pour un peu plus de réalisme. Le tutoriel officiel utilise le
+        shell Django pour ceci. Cependant nous utiliserons ici l’interface d’administration de Django dont l’approche
+        visuelle est plus intuitive pour beaucoup de développeurs.</p>
+
+    <p>Pour afficher notre modèle dans l’interface administrateur, ajoutez les lignes suivantes au fichier <code>snippets/admin.py</code>:
+    </p>
+
+    <pre><code class="language-python">from django.contrib import admin
+from . models import Snippet
+
+admin.site.register(Snippet)</code> </pre>
+
+    <p>Créez ensuite un super-utilisateur à l’aide de la commande suivant afin de vous connecter à votre interface
+        d’administration:</p>
+
+    <pre><code class="language-bash">(env) $ python manage.py createsuperuser</code></pre>
+
+    <p>Suivez les instructions qui apparaissent dans le terminal pour compléter la créations du super-utilisateur.</p>
+
+    <p>A présent, lancez pour la première fois votre serveur local en tapant:</p>
+
+    <pre><code class="language-bash">(env) $ python manage.py runserver</code></pre>
+
+    <p>Ouvrez votre navigateur et allez à l’adresse <a href="http://1207.0.0.1:8000/">http://1207.0.0.1:8000/</a>. Si
+        tout fonctionne correctement vous devriez voir la page suivante :</p>
+
+
+
+
+
+
+</div>
+
+</body>
+</html>
